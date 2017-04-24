@@ -21,8 +21,6 @@
 <button title="Reduces arrow spread" id="stat3" style = "position: absolute; left: 200; top: 375; z-index: 5; visibility: visible;">+</button>
 <button title="Increases crit chanse" id="stat4" style = "position: absolute; left: 200; top: 400; z-index: 5; visibility: visible;">+</button>
 <button title="Increases crit damage" id="stat5" style = "position: absolute; left: 200; top: 425; z-index: 5; visibility: visible;">+</button>
-<button title="Increases pierce chanse" id="stat6" style = "position: absolute; left: 200; top: 450; z-index: 5; visibility: visible;">+</button>
-<button title="Increases split chanse" id="stat7" style = "position: absolute; left: 200; top: 475; z-index: 5; visibility: visible;">+</button>
 
 <script>
 var ctx_menu = document.getElementById("canvas_menu").getContext("2d");
@@ -97,7 +95,6 @@ var enemy = {
 	speed: 2,
 	basehp: 20,
 	hp: 20,
-	r : 36,
 }
 
 var combattext = {
@@ -175,28 +172,6 @@ stat5.onclick=function(){
 		alert("get mony scrub $$$ vape naysh");
 	}
 }
-stat6.onclick=function(){
-	if(chr.exp >= statcost.pierce && statlevel.pierce < 20) {
-		chr.pierce += 0.05;
-		chr.exp -= statcost.pierce;
-		statcost.pierce += 25;
-		statlevel.pierce += 1;
-		menu_draw();
-	} else {
-		alert("get mony scrub $$$ vape naysh");
-	}
-}
-stat7.onclick=function(){
-	if(chr.exp >= statcost.split && statlevel.split < 20) {
-		chr.split += 0.05;
-		chr.exp -= statcost.split;
-		statcost.split += 5;
-		statlevel.split += 1;
-		menu_draw();
-	} else {
-		alert("get mony scrub $$$ vape naysh");
-	}
-}
 
 
 
@@ -214,8 +189,6 @@ var statcost = {
 	accuracy: 5,
 	crit: 5,
 	critmult: 5,
-	pierce: 100,
-	split: 100,
 }
 
 var statlevel = {
@@ -224,8 +197,6 @@ var statlevel = {
 	accuracy: 0,
 	crit: 0,
 	critmult: 0,
-	pierce: 0,
-	split: 0,
 }
 
 var chr = {
@@ -239,8 +210,6 @@ var chr = {
 	accuracy: 0,
 	crit: 0.05,
 	critmult: 1.5,
-	pierce: 0,
-	split: 0,
 	exp: 0,
 	lvl: 0,
 }
@@ -293,6 +262,14 @@ function mouseDown(e) {
 function mouseUp(e) {
 	mouse.d = false;
 }
+
+/*
+myAudio.addEventListener('canplaythrough', function() {
+    if(this.currentTime < 0){this.currentTime = 0;}
+		this.play();
+		this.volume = 0.25;
+    });
+*/
 
 { //system functions
 
@@ -410,6 +387,8 @@ function game_loop() {
 	if (Math.random() * 1000 < (5 + 995*chr.lvl/10000)) {
 		enemy_spawn();
 	}
+
+	if (keypress.b1) {chr.exp += 1;}
 	
 	if (chr.x > 1280) {
 		start_menu();
@@ -448,43 +427,25 @@ function game_loop() {
 	//collision
 	for (var i = 0; i < enemies.length; i++) {
 		for (var j = 0; j < projectiles.length; j++) {
-			if (pDistance(enemies[i].x, enemies[i].y, projectiles[j].x, projectiles[j].y, projectiles[j].x + 36*Math.cos(projectiles[j].dir), projectiles[j].y + 36*Math.sin(projectiles[j].dir)) <= enemies[i].r) {
+			if (pDistance(enemies[i].x, enemies[i].y, projectiles[j].x + 5*Math.cos(projectiles[j].dir), projectiles[j].y + 5*Math.sin(projectiles[j].dir), projectiles[j].x - 5*Math.cos(projectiles[j].dir), projectiles[j].y - 5*Math.sin(projectiles[j].dir)) <= 40) {
+				var rand = Math.random()
 				enemies[i].hp -= projectiles[j].damage;
-				if (Math.random()<chr.crit) {
+				if (rand<chr.crit) {
 					enemies[i].hp -= projectiles[j].damage*(chr.critmult-1);
 					spawn_cobattext((round1d(projectiles[j].damage*chr.critmult)).toString(), "crit", projectiles[j].x, projectiles[j].y);
 				} else {
 					spawn_cobattext((round1d(projectiles[j].damage)).toString(), "damage", projectiles[j].x, projectiles[j].y);
 				}
-				alert(chr.split);
-				if (Math.random()<chr.split && enemies[i].hp <= 0) {
-					projectile.x = projectiles[j].x;
-					projectile.y = projectiles[j].y;
-					projectile.speed = projectiles[j].speed;
-					projectile.damage = projectiles[j].damage/2;
-					var d = projectiles[j].dir;
-					
-					projectile.dir = d + 15*Math.PI/180;
-					projectiles.push(clone(projectile));
-					
-					projectile.dir = d - 15*Math.PI/180;
-					projectiles.push(clone(projectile));
-
-				}
-				if (Math.random()>chr.pierce || enemies[i].hp > 0) {
-		
-					projectiles.splice(j,1);
-				}
+				projectiles.splice(j,1);
 				continue;
 			}
-			if (enemies[i].hp <= 0) {
-				alert("splice")
-				chr.exp += 10;
-				chr.lvl += 1;
-				spawn_cobattext("+10 exp", "exp", enemies[i].x, enemies[i].y);
-				enemies.splice(i,1);
-				continue;
-			}
+		}
+		if (enemies[i].hp <= 0) {
+			chr.exp += 10;
+			chr.lvl += 1;
+			spawn_cobattext("+10 exp", "exp", enemies[i].x, enemies[i].y);
+			enemies.splice(i,1);
+			continue;
 		}
 	}
 	
@@ -616,20 +577,13 @@ function game_draw() {
 		ctx_game.fillRect(enemies[i].x-35,enemies[i].y-45,70,8);
 		ctx_game.fillStyle = "green";
 		ctx_game.fillRect(enemies[i].x-35,enemies[i].y-45,enemies[i].hp/enemies[i].basehp*70,8);
-		
-		ctx_game.globalAlpha = 0.1;
-		ctx_game.fillStyle = "red"
-		ctx_game.beginPath();
-		ctx_game.arc(enemies[i].x,enemies[i].y,enemies[i].r,0,2*Math.PI);		
-		ctx_game.fill();
-		ctx_game.globalAlpha = 1;
 	}
 	
 	for (var i = 0; i < projectiles.length; i++) {
 		ctx_game.save();
 		ctx_game.translate(projectiles[i].x, projectiles[i].y);
 		ctx_game.rotate(Math.atan2(projectiles[i].speed*Math.cos(projectiles[i].dir), -1*projectiles[i].speed*Math.sin(projectiles[i].dir))-Math.PI/2);
-		ctx_game.drawImage(img_arrow, 0, -2.5);
+		ctx_game.drawImage(img_arrow, 0, 0);
 		ctx_game.restore();
 	}
 	
@@ -669,12 +623,11 @@ function game_draw() {
 	ctx_game.fillStyle = "yellow";
 	ctx_game.font="24px Verdana";
 	ctx_game.fillText("Lifes: " + lifes, 1160,700);
-	ctx_game.fillText("pigs per second: " + Math.round(10*(60*(5+995*chr.lvl/25000)/1000))/10, 1000,50);
+	ctx_game.fillText("pigs per second: " + Math.round(10*(60*(5+995*chr.lvl/10000)/1000))/10, 1000,50);
 	ctx_game.fillText("kills: " + chr.lvl, 1000,100);
 }
 
 function menu_draw() {
-	if (keypress.b1) {chr.exp += 100;}
 	ctx_menu.clearRect(0,0,1280,720);
 	ctx_menu.fillStyle = "#222222";
 	ctx_menu.fillRect(0,0,1280,720);
