@@ -21,6 +21,8 @@
 <button title="Reduces arrow spread" id="stat3" style = "position: absolute; left: 200; top: 375; z-index: 5; visibility: visible;">+</button>
 <button title="Increases crit chanse" id="stat4" style = "position: absolute; left: 200; top: 400; z-index: 5; visibility: visible;">+</button>
 <button title="Increases crit damage" id="stat5" style = "position: absolute; left: 200; top: 425; z-index: 5; visibility: visible;">+</button>
+<button title="Increases pierce chanse" id="stat6" style = "position: absolute; left: 200; top: 450; z-index: 5; visibility: visible;">+</button>
+<button title="Increases split chanse" id="stat7" style = "position: absolute; left: 200; top: 475; z-index: 5; visibility: visible;">+</button>
 
 <script>
 var ctx_menu = document.getElementById("canvas_menu").getContext("2d");
@@ -87,6 +89,7 @@ var proj = {
 	dir: 0,
 	basedamage: 10,
 	damage: 0,
+	ignore: [],
 }
 
 var enemy = {
@@ -95,6 +98,8 @@ var enemy = {
 	speed: 2,
 	basehp: 20,
 	hp: 20,
+	r : 36,
+	id : 0,
 }
 
 var combattext = {
@@ -105,6 +110,7 @@ var combattext = {
 	text : "",
 }
 
+var enemyid = 0;
 var enemies = [];
 var projectiles = [];
 var combattexts = [];
@@ -172,6 +178,28 @@ stat5.onclick=function(){
 		alert("get mony scrub $$$ vape naysh");
 	}
 }
+stat6.onclick=function(){
+	if(chr.exp >= statcost.pierce && statlevel.pierce < 20) {
+		chr.pierce += 0.05;
+		chr.exp -= statcost.pierce;
+		statcost.pierce += 25;
+		statlevel.pierce += 1;
+		menu_draw();
+	} else {
+		alert("get mony scrub $$$ vape naysh");
+	}
+}
+stat7.onclick=function(){
+	if(chr.exp >= statcost.split && statlevel.split < 20) {
+		chr.split += 0.05;
+		chr.exp -= statcost.split;
+		statcost.split += 25;
+		statlevel.split += 1;
+		menu_draw();
+	} else {
+		alert("get mony scrub $$$ vape naysh");
+	}
+}
 
 
 
@@ -189,6 +217,8 @@ var statcost = {
 	accuracy: 5,
 	crit: 5,
 	critmult: 5,
+	pierce: 100,
+	split: 100,
 }
 
 var statlevel = {
@@ -197,6 +227,8 @@ var statlevel = {
 	accuracy: 0,
 	crit: 0,
 	critmult: 0,
+	pierce: 0,
+	split: 0,
 }
 
 var chr = {
@@ -210,6 +242,8 @@ var chr = {
 	accuracy: 0,
 	crit: 0.05,
 	critmult: 1.5,
+	pierce: 0,
+	split: 0,
 	exp: 0,
 	lvl: 0,
 }
@@ -262,14 +296,6 @@ function mouseDown(e) {
 function mouseUp(e) {
 	mouse.d = false;
 }
-
-/*
-myAudio.addEventListener('canplaythrough', function() {
-    if(this.currentTime < 0){this.currentTime = 0;}
-		this.play();
-		this.volume = 0.25;
-    });
-*/
 
 { //system functions
 
@@ -333,6 +359,16 @@ function pDistance(x, y, x1, y1, x2, y2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+Array.prototype.contains = function(obj) {
+    var i = this.length;
+    while (i--) {
+        if (this[i] == obj) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function round1d(n) {
 	return Math.round(n*10)/10;
 }
@@ -380,6 +416,8 @@ function start_game() {
 function enemy_spawn() {
 	enemy.x = 1300;
 	enemy.y = 100+Math.random()*520;
+	enemy.id = enemyid;
+	enemyid += 1;
 	enemies.push(clone(enemy));
 }
 
@@ -387,8 +425,6 @@ function game_loop() {
 	if (Math.random() * 1000 < (5 + 995*chr.lvl/10000)) {
 		enemy_spawn();
 	}
-
-	if (keypress.b1) {chr.exp += 1;}
 	
 	if (chr.x > 1280) {
 		start_menu();
@@ -427,25 +463,47 @@ function game_loop() {
 	//collision
 	for (var i = 0; i < enemies.length; i++) {
 		for (var j = 0; j < projectiles.length; j++) {
-			if (pDistance(enemies[i].x, enemies[i].y, projectiles[j].x + 5*Math.cos(projectiles[j].dir), projectiles[j].y + 5*Math.sin(projectiles[j].dir), projectiles[j].x - 5*Math.cos(projectiles[j].dir), projectiles[j].y - 5*Math.sin(projectiles[j].dir)) <= 40) {
-				var rand = Math.random()
+			if (pDistance(enemies[i].x, enemies[i].y, projectiles[j].x, projectiles[j].y, projectiles[j].x + 36*Math.cos(projectiles[j].dir), projectiles[j].y + 36*Math.sin(projectiles[j].dir)) <= enemies[i].r && !(projectiles[j].ignore).contains(enemies[i].id)) {
 				enemies[i].hp -= projectiles[j].damage;
-				if (rand<chr.crit) {
+				if (Math.random()<chr.crit) {
 					enemies[i].hp -= projectiles[j].damage*(chr.critmult-1);
 					spawn_cobattext((round1d(projectiles[j].damage*chr.critmult)).toString(), "crit", projectiles[j].x, projectiles[j].y);
 				} else {
 					spawn_cobattext((round1d(projectiles[j].damage)).toString(), "damage", projectiles[j].x, projectiles[j].y);
 				}
-				projectiles.splice(j,1);
+				if (Math.random()<chr.split) {
+					proj.x = projectiles[j].x;
+					proj.y = projectiles[j].y;
+					proj.speed = projectiles[j].speed;
+					proj.damage = projectiles[j].damage/2;
+					
+					if (!(projectiles[j].ignore).contains(enemies[i].id)) {
+						projectiles[j].ignore.push(enemies[i].id);
+					}
+					
+					var d = projectiles[j].dir;
+					
+					proj.dir = d + 15*Math.PI/180;
+					projectiles.push(clone(proj));
+					
+					proj.dir = d - 15*Math.PI/180;
+					projectiles.push(clone(proj));
+				}
+				if (Math.random()<chr.pierce) {
+					if (!(projectiles[j].ignore).contains(enemies[i].id)) {
+						projectiles[j].ignore.push(enemies[i].id);
+					};
+				} else {
+					projectiles.splice(j,1);
+				}
+			}
+			if (enemies[i].hp <= 0) {
+				chr.exp += 10;
+				chr.lvl += 1;
+				spawn_cobattext("+10 exp", "exp", enemies[i].x, enemies[i].y);
+				enemies.splice(i,1);
 				continue;
 			}
-		}
-		if (enemies[i].hp <= 0) {
-			chr.exp += 10;
-			chr.lvl += 1;
-			spawn_cobattext("+10 exp", "exp", enemies[i].x, enemies[i].y);
-			enemies.splice(i,1);
-			continue;
 		}
 	}
 	
@@ -469,6 +527,7 @@ function weapon_1() {
 		proj.dir = Math.atan2(mouse.y-chr.y,mouse.x-chr.x)+(Math.random()*chr.accuracy*Math.PI/180-chr.accuracy*Math.PI/360);
 		proj.speed = proj.basespeed + 2*proj.basespeed*chr.charge/chr.maxcharge;
 		proj.damage = proj.basedamage*chr.charge/chr.maxcharge;
+		proj.ignore = [];
 		projectiles.push(clone(proj));
 		chr.charge = 0;
 	}
@@ -577,14 +636,23 @@ function game_draw() {
 		ctx_game.fillRect(enemies[i].x-35,enemies[i].y-45,70,8);
 		ctx_game.fillStyle = "green";
 		ctx_game.fillRect(enemies[i].x-35,enemies[i].y-45,enemies[i].hp/enemies[i].basehp*70,8);
+		
+		ctx_game.globalAlpha = 0.1;
+		ctx_game.fillStyle = "red"
+		ctx_game.beginPath();
+		ctx_game.arc(enemies[i].x,enemies[i].y,enemies[i].r,0,2*Math.PI);		
+		ctx_game.fill();
+		ctx_game.globalAlpha = 1;
+		//ctx_game.fillText(enemies[i].id, enemies[i].x, enemies[i].y);
 	}
 	
 	for (var i = 0; i < projectiles.length; i++) {
 		ctx_game.save();
 		ctx_game.translate(projectiles[i].x, projectiles[i].y);
 		ctx_game.rotate(Math.atan2(projectiles[i].speed*Math.cos(projectiles[i].dir), -1*projectiles[i].speed*Math.sin(projectiles[i].dir))-Math.PI/2);
-		ctx_game.drawImage(img_arrow, 0, 0);
+		ctx_game.drawImage(img_arrow, 0, -2.5);
 		ctx_game.restore();
+		//ctx_game.fillText(projectiles[i].ignore, projectiles[i].x, projectiles[i].y);
 	}
 	
 	for (var i = 0; i < combattexts.length; i++) {
@@ -623,11 +691,12 @@ function game_draw() {
 	ctx_game.fillStyle = "yellow";
 	ctx_game.font="24px Verdana";
 	ctx_game.fillText("Lifes: " + lifes, 1160,700);
-	ctx_game.fillText("pigs per second: " + Math.round(10*(60*(5+995*chr.lvl/10000)/1000))/10, 1000,50);
+	ctx_game.fillText("pigs per second: " + Math.round(10*(60*(5+995*chr.lvl/25000)/1000))/10, 1000,50);
 	ctx_game.fillText("kills: " + chr.lvl, 1000,100);
 }
 
 function menu_draw() {
+	if (keypress.b1) {chr.exp += 100;}
 	ctx_menu.clearRect(0,0,1280,720);
 	ctx_menu.fillStyle = "#222222";
 	ctx_menu.fillRect(0,0,1280,720);
@@ -662,6 +731,8 @@ function menu_draw() {
 	ctx_menu.fillText("accuracy rating:",235,392);
 	ctx_menu.fillText("crit chanse:",235,417);
 	ctx_menu.fillText("crit multiplier:",235,442);
+	ctx_menu.fillText("pierce chanse",235,467);
+	ctx_menu.fillText("split chanse",235,492);
 	
 	ctx_menu.fillStyle = "yellow";
 	ctx_menu.fillText(chr.speed,400,342);
@@ -669,6 +740,8 @@ function menu_draw() {
 	ctx_menu.fillText(15-chr.baseaccuracy,400,392);
 	ctx_menu.fillText(chr.crit*100 + "%",400,417);
 	ctx_menu.fillText(chr.critmult,400,442);
+	ctx_menu.fillText(chr.pierce,400,467);
+	ctx_menu.fillText(chr.split,400,492);
 
 	ctx_menu.fillStyle = "white"
 	ctx_menu.font="16px Verdana";
@@ -677,6 +750,8 @@ function menu_draw() {
 	ctx_menu.fillText("cost: " + statcost.accuracy + " exp",90,392);
 	ctx_menu.fillText("cost: " + statcost.crit + " exp",90,417);
 	ctx_menu.fillText("cost: " + statcost.critmult + " exp",90,442);
+	ctx_menu.fillText("cost: " + statcost.pierce + " exp",90,467);
+	ctx_menu.fillText("cost: " + statcost.split + " exp",90,492);
 }
 
 </script>
