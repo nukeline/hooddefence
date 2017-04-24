@@ -1,8 +1,310 @@
-<html>
-<canvas id = "mycanvas" width = "1280" height = "720"> </canvas>
+<audio id="audio2" 
+       preload="auto" 
+       src="http://slimgarynadege.free.fr/.zic/Snoop%20Dogg%20-%20Doggystyle%20(1993)!/09.%20Serial%20Killa.mp3" >
+    <p>Your browser does not support the audio element</p>
+</audio>
+<div style="position: relative;">
+<canvas id="background" width="1280" height="800" style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>			<!--Background-->
 <script>
-var ctx = document.getElementById("mycanvas").getContext("2d");
-ctx.fillRect(0,0,1280,720);
-
+var background = document.getElementById("background").getContext("2d");
+var imageBack = new Image();
+imageBack.onload = function() {
+	background.drawImage(imageBack, 0, 0);
+    };
+imageBack.src = 'https://lh4.ggpht.com/aLBmsE4ydAQ_SLfsTq0SVDsC5hkexu4kxHQuAWEt0AfXcgQNCkA6RZ0yA9j0UDl5yNE=h900';
 </script>
-</html>
+
+
+
+
+<canvas id='my_canvas' width="1280" height="800" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>	
+<script>
+//Play Audio @ 27.7 sec
+
+myAudio=document.getElementById('audio2');
+myAudio.addEventListener('canplaythrough', function() {
+    if(this.currentTime < 0){this.currentTime = 87.7;}
+		this.play();
+		this.volume = 0.25;
+    });
+
+
+
+document.getElementById('my_canvas').style.cursor = 'none';
+
+
+canvas = document.getElementById('my_canvas');
+ctx = canvas.getContext("2d");
+canvas.onmousemove = getMousePosition;
+canvas.onmousedown = mouseDown;
+canvas.onmouseup = mouseUp;
+
+ctx.fillStyle="black";
+var cradius = 25;
+var cpos = [640, 500];
+
+
+var left = false;
+var right = false;
+var up = false;
+var down = false;
+
+var mousex = 0;
+var mousey = 0;
+var moused = false;
+
+var bposx = [];
+var bposy = [];
+var bangle = [];
+
+var eposx = [];
+var eposy = [];
+var ehp = [];
+var eradius = 25;
+var debug = 0;
+
+var smult_diag = 1;
+var gun_delay = 0;
+
+var angle = 0;
+var flip = false;
+
+document.addEventListener('keydown', function(event) {
+    if(event.keyCode == 0x41) {
+	left = true;
+    }
+	if(event.keyCode == 0x57) {
+	up = true;
+    }
+	if(event.keyCode == 0x44) {
+	right = true;
+    }
+	if(event.keyCode == 0x53) {
+	down = true;
+    }
+	if(event.keyCode == 16) {
+    }
+	if(event.keyCode == 32) {
+	}
+});
+document.addEventListener('keyup', function(event) {
+    if(event.keyCode == 0x41) {
+	left = false;
+    }
+	if(event.keyCode == 0x57) {
+	up = false;
+    }
+	if(event.keyCode == 0x44) {
+	right = false;
+    }
+	if(event.keyCode == 0x53) {
+	down = false;
+    }
+});
+
+function distance(x1, x2, y1, y2) {
+	return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+}
+
+function checkswarm(n) {
+	var testx = [];
+	var testy = [];
+	var collided = [];
+	var npriority = false;
+	
+	if(ehp.length == 1) {return true;}
+	
+	for(var i = 0; i < ehp.length; i++) {
+		testx.push(eposx[i] + 4*Math.cos(Math.atan2(cpos[1]-eposy[i],cpos[0]-eposx[i])));
+		testy.push(eposy[i] + 4*Math.sin(Math.atan2(cpos[1]-eposy[i],cpos[0]-eposx[i])));
+	}
+	
+	for(var i = 0; i < ehp.length; i++) {
+		if(i==n) {continue;}
+		if(distance(testx[i], testx[n], testy[i], testy[n])<eradius*2) {		//is n colliding?
+			collided.push(i);													//document collided object
+		}
+	}
+	if(collided.length==0) {return true;}										//if n is not colliding, move n
+	
+	for(var i = 0; i < collided.length; i++) {
+		if(distance(cpos[0], testx[n], cpos[1], testy[n])>distance(cpos[0], testx[collided[i]], cpos[1], testy[collided[i]])) {		//is n closer than challenging object?
+			return false;																											//give n priority
+		}																															//remove n priority
+	}
+	return true;																				//if n closest, move
+}
+
+function realspeed() {
+	return 10*smult_diag;
+}
+
+//Load Images
+var imageObj = new Image();
+imageObj.src = 'http://i.imgur.com/QTmvPzu.png';
+var imageObj2 = new Image();
+imageObj2.src = 'http://i.imgur.com/0IabWnm.png';
+var imageWeed = new Image();
+imageWeed.src = 'http://i.imgur.com/q1MSmcF.png';
+var imageBaseball = new Image();
+imageBaseball.src = 'http://i.imgur.com/Y6awj51.png';
+var imageBaseballswing = new Image();
+imageBaseballswing.src = 'http://i.imgur.com/TndbUGb.png';
+var imageAina = new Image();
+imageAina.src = 'http://i.imgur.com/R4n4N6p.png';
+var imageGun = new Image();
+imageGun.src = 'http://i.imgur.com/mAdK1ns.png';
+
+function getMousePosition(e) {
+    mousex = e.pageX - my_canvas.offsetLeft;
+    mousey = e.pageY - my_canvas.offsetTop;
+}
+function mouseDown(e) {
+	if(true){bullets();gun_delay = 0.5;}
+}
+function mouseUp(e) {
+	moused = false;
+}
+
+function bullets() {
+	bposx.push(cpos[0]);
+	bposy.push(cpos[1]);
+	bangle.push(Math.atan2((720-cpos[1])-mousey,mousex-cpos[0])+0*(Math.random()*10-5)*Math.PI/180);
+}
+
+
+setInterval(function () {enemies()}, 1000);
+//enemies()
+function enemies() {
+	eposx.push(Math.random()*1280);
+	eposy.push(800);
+	
+	//eposx.push(640);
+	//eposy.push(360)
+	
+	ehp.push(100);
+}
+setInterval(function () {main()}, 1000/60);
+function main() {
+	if(gun_delay>0){gun_delay -= 1/60;} else {gun_delay=0;}
+	angle++;
+	
+	//bullets move
+	for (var i = 0; i<bangle.length; i++) {
+		bposx[i] += 50*Math.cos(bangle[i]);
+		bposy[i] += 50*Math.sin(bangle[i]);
+			if(bposx[i]<-10 || bposx[i]>1290 || bposy[i]<-10 || bposy[i]>730) {
+				bposx.splice(i,1);
+				bposy.splice(i,1);
+				bangle.splice(i,1);
+		}
+	}
+	//enemies move
+	for (var i = 0; i<eposx.length; i++) {
+		if(checkswarm(i)) {
+			eposx[i] += 4*Math.cos(Math.atan2(cpos[1]-eposy[i],cpos[0]-eposx[i]));
+			eposy[i] += 4*Math.sin(Math.atan2(cpos[1]-eposy[i],cpos[0]-eposx[i]));
+		}
+	}
+
+	if ((left == true && up == true) || (up == true && right == true) || (right == true && down == true) || (down == true && left == true)) {smult_diag = 1/Math.sqrt(2);} else {smult_diag = 1;}
+	if (left == true && cpos[0]-cradius > 0) {cpos[0] -= realspeed();}
+	if (up == true && 720-cpos[1]-cradius > 0) {cpos[1] += realspeed();}
+	if (right == true && cpos[0]+cradius < 1280) {cpos[0] += realspeed();}
+	if (down == true && 720-cpos[1]+cradius < 720) {cpos[1] -= realspeed();}
+	
+	
+	//bullet - enemies
+	
+	for(var i = 0; i < ehp.length; i++) {
+		for(var j = 0; j < bangle.length; j++)
+			if(Math.sqrt((eposx[i]-bposx[j])*(eposx[i]-bposx[j]) + (eposy[i]-bposy[j])*(eposy[i]-bposy[j]))<eradius) {
+				bposx.splice(j,1);
+				bposy.splice(j,1);
+				bangle.splice(j,1);
+				ehp[i] -= 40+Math.random()*30-15;
+				if (ehp[i] <= 0) {
+				eposx.splice(i,1);
+				eposy.splice(i,1);
+				ehp.splice(i,1);
+				}
+			}
+	
+	}
+	
+	//draw
+	ctx.clearRect(0,0,1280,720);
+	
+	//enemies
+	for (var i = 0; i<eposx.length; i++) {
+		ctx.drawImage(imageAina, eposx[i]-35, 720-eposy[i]-35);
+		
+		ctx.fillStyle = "black";
+		ctx.fillRect(eposx[i]-eradius*1.25,720-eposy[i]-eradius*1.5,eradius*2.5,8)
+		ctx.fillStyle = "red";
+		ctx.fillRect(eposx[i]-eradius*1.25+1,720-eposy[i]-eradius*1.5+1,eradius*2.5-1,6)
+		ctx.fillStyle = "green";
+		ctx.fillRect(eposx[i]-eradius*1.25+1,720-eposy[i]-eradius*1.5+1,(eradius*2.5-1)*ehp[i]/100,6)
+		ctx.fillStyle = "black";
+		
+		//ctx.beginPath();
+		//ctx.arc(eposx[i],720-eposy[i],eradius,0,2*Math.PI);
+		//ctx.fill();
+	}
+	
+	
+	//bullets
+	for (var i = 0; i<bangle.length; i++) {
+		//ctx.fillStyle = "yellow"
+		//ctx.beginPath();
+		//ctx.arc(bposx[i],720-bposy[i],2,0,2*Math.PI);
+		//ctx.fill();
+		//ctx.fillStyle = "black"
+		
+		ctx.beginPath();
+		ctx.moveTo(bposx[i], 720-bposy[i]);
+		ctx.lineTo(bposx[i]+30*Math.cos(bangle[i]), 720-bposy[i]-30*Math.sin(bangle[i]));
+		ctx.strokeStyle = "yellow";
+		ctx.lineWidth = 2;
+		ctx.stroke();
+	}
+	
+	if (gun_delay > 0) {
+		ctx.beginPath();
+		ctx.arc(cpos[0],720-cpos[1],cradius+10,0,2*Math.PI*gun_delay/0.5);
+		ctx.strokeStyle="white";
+		ctx.lineWidth=5;
+		ctx.stroke();
+		ctx.fillStyle="black";
+	}
+	
+	ctx.save(); 
+	ctx.translate(cpos[0], 720-cpos[1]);
+	
+	var flipangle = -1;
+	if(mousex-cpos[0]<0 && flip == false) {ctx.scale(1,-1); flipangle = 1;} else {flipangle = -1;}
+	ctx.rotate(flipangle*Math.atan2((720-cpos[1])-mousey,mousex-cpos[0]));
+	ctx.drawImage(imageObj2, -25, -25);
+	ctx.restore();
+	
+	ctx.save();
+	ctx.translate(cpos[0], 720-cpos[1]);
+	if(mousex-cpos[0]<0 && flip == false) {ctx.scale(1,-1); flipangle = 1;} else {flipangle = -1;}
+	ctx.rotate(flipangle*Math.atan2((720-cpos[1])-mousey,mousex-cpos[0]));
+	ctx.drawImage(imageGun, -75, -75);
+	ctx.restore();
+	
+	ctx.beginPath();
+	ctx.arc(mousex,mousey,5,0,2*Math.PI);
+	ctx.fill();
+	
+	//debug
+	
+	ctx.fillText(moused,100,100);
+	/*
+	ctx.fillText(eposy,100,200);
+	ctx.fillText(Math.atan2(cpos[1]-eposy[0],cpos[0]-eposx[0]),100,250);
+	*/
+}
+</script>
+</div>
