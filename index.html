@@ -90,6 +90,7 @@ var proj = {
 	basedamage: 10,
 	damage: 0,
 	ignore: [],
+	hassplitted: false,
 }
 
 var enemy = {
@@ -480,7 +481,7 @@ function game_loop() {
 					proj.y = projectiles[j].y;
 					proj.speed = projectiles[j].speed;
 					proj.damage = projectiles[j].damage/2;
-					
+					proj.hassplitted = true;
 					if (!(projectiles[j].ignore).contains(enemies[i].id)) {
 						projectiles[j].ignore.push(enemies[i].id);
 					}
@@ -493,8 +494,9 @@ function game_loop() {
 					proj.dir = d - 15*Math.PI/180;
 					projectiles.push(clone(proj));
 				}
-				if (Math.random()<chr.pierce) {
+				if (Math.random()<chr.pierce && !projectiles[j].hassplitted) {
 					if (!(projectiles[j].ignore).contains(enemies[i].id)) {
+						projectiles[j].damage = projectiles[j].damage/2;
 						projectiles[j].ignore.push(enemies[i].id);
 					};
 				} else {
@@ -532,6 +534,7 @@ function weapon_1() {
 		proj.speed = proj.basespeed + 2*proj.basespeed*chr.charge/chr.maxcharge;
 		proj.damage = proj.basedamage*chr.charge/chr.maxcharge;
 		proj.ignore = [];
+		proj.hassplitted = false;
 		projectiles.push(clone(proj));
 		chr.charge = 0;
 	}
